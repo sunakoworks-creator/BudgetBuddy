@@ -3,13 +3,23 @@ import os
 import datetime
 import calendar
 
-# The hosting provider will give us this URL in an environment variable
+# Load database URL from environment variable
 DATABASE_URL = os.environ.get('DATABASE_URL')
 
 async def get_connection():
     """Returns an asynchronous connection pool to the PostgreSQL database."""
     try:
-        return await asyncpg.create_pool(DATABASE_URL, ssl="require")
+        # --- CRITICAL PERMANENTLY FREE UPDATE ---
+        # Free Supabase/Cloud PostgreSQL tiers often pause connections or 
+        # use transaction pooling. A short max_pool_size is required
+        # to ensure it stays active and never times out during inactivity.
+        return await asyncpg.create_pool(
+            DATABASE_URL, 
+            ssl="require",
+            min_size=1,
+            max_size=3, # Keep this very low!
+            command_timeout=60
+        )
     except Exception as e:
         print(f"Error connecting to database: {e}")
         return None
